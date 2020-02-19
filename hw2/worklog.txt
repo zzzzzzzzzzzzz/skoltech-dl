@@ -1,0 +1,18 @@
+* I started with Alexnet original model with reduced by 0.5 number of filters (or neurons if we talk about classifier) in each layer and reduced receptive field and stride in the first convolution (hence images are 4 times smaller)
+* Performed some test runs (without augmentation) to find out so-so optimal batch size, optimizer parameters and the number of epochs.
+-- Started with 1000 epochs (to stop early), 128bs, 0.01 lr and 0.9 momentum for sgd optimizer. Each epoch calculates quite long time, so it's a good idea to check bs 64. I suppose it will not affect learning curve dramatically, but will save my time. I observed the process for 10 epochs and it seems like 0.01 is to much. I can't see any (desired) changes in the loss curve. See https://s.mail.ru/Mpa6/rPRTqa1i3
+-- So let's reduce bs to 64 and lr to 0.001. Seems like it's also not so good choice https://s.mail.ru/4xiN/pgoBBH9ao
+-- Let's turn to 32 bs and lr 0.0005. It seems like it's again stuck in the local minimum. https://s.mail.ru/LpVG/ZzZvB68bj
+-- oooh it seems like i found out the REAL problem. I forgot to shuffle the data :). Let's see what we'll get with shuffling. Seems like everything goes nice https://s.mail.ru/DHKD/yjZESCCyt Continue to wait... level 20 reached https://s.mail.ru/7LMB/sFgMs74Sq Look at this step in the beginning. I think that the reason is a small batch size. We have 200 classes, 32 samples don't cover such diversity. Let's increase the bs to be 128 in the next try. I would say that on epoch 120 it starts to overfit https://s.mail.ru/8u1s/hRZv7zSBR
+-- So let's try bs 128 and lr 0.0005. https://s.mail.ru/4j42/2WYG53WWa let's try to change learning rate. It seems to me that changes on each step are not sufficient.
+-- bs 128 lr 0.01. https://s.mail.ru/BqGX/9QnpgiStW the process goes way more faster! New horizons in front! I just need to deal with overfitting...
+-- So, basically I'll use lr 0.01, momentum 0.9 and bs 128. Let's make something different
+* Let's add some augmentation to force model to be more robust and less overfit. And it helped a bit. 35+ reached https://s.mail.ru/KWeH/VJMykTA46
+* Changed activations to prelu. Got 39 on validation...
+* Let's try batch normalization instead of vanilla LocalResponseNorm. Dramatically increased learning speed. Reached 0.4 on some step but just for one moment, overfitting is still the issue. https://s.mail.ru/JncC/7XCW9xMEK
+* Let's try to reduce learning rate at the step 20 to 0.001 for better stability and see what's happen. https://s.mail.ru/8Y8B/NEm5kCUEU so I reached 43, but still overfitting problem is not solved... 
+* For me it feels like I need to use bigger batch size. If it will not help I'll try to somehow change the model structure (and also add ColorGitter to augmentation).
+* With bs 256 learning curve is more stable https://s.mail.ru/6uTi/j3zVW5VgM but overfitting is still there
+* Let's try to add one more layer with batch norm in the middle of the network. https://s.mail.ru/KQfG/5xFGmfana it didn't work out. I think the problem is the reduced amount of features before dense layers (it's just 128 now and recenetly it was 128*3*3)
+* Let's make the kernel size for the first convolution to be 5 instead of 7. Then in the end there'll be more features. Also I'll try to increase the number of filters in the first convolution (from 64 to 128). I think this variaty of filters can help reduce overfitting. https://s.mail.ru/FA9M/jUirFrg9Q So this worked a bit, but still not ideal.
+* Let's add the regulatization term with lambda=0.0005. At least we surely crossed 0.4 line. So let's finish on this. https://s.mail.ru/5UXL/ssYAHJtJg
